@@ -1,0 +1,595 @@
+id: comparison-result-v0.1
+title: Comparison Result v0.1
+version: 0.1.0
+status: draft
+license: CC-BY-4.0
+spec_type: evidence-comparison-object
+
+summary: >
+  Comparison Result v0.1 defines a minimal, machine-readable object for comparing
+  two Structure Fingerprint objects. It separates proof-oriented comparison from
+  inference-oriented comparison, makes uncertainty explicit, and provides a
+  controlled bridge to downstream lineage, review, and allocation-readiness layers.
+
+purpose:
+  - Provide a standard object for comparing two Structure Fingerprint records.
+  - Preserve the separation between cryptographic/provenance evidence and structural/inferential evidence.
+  - Make similarity, conflict, uncertainty, and review requirements explicit.
+  - Provide a safe input object for future lineage-relation and allocation-readiness specifications.
+
+non_goals:
+  - This specification does not determine absolute authorship.
+  - This specification does not determine absolute origin.
+  - This specification does not assign royalty shares.
+  - This specification does not make legal infringement claims.
+  - This specification does not replace human review in disputed or high-impact cases.
+
+core_principles:
+  - name: proof_inference_separation
+    description: >
+      Proof-oriented evidence and inference-oriented evidence MUST be compared separately.
+
+  - name: explicit_uncertainty
+    description: >
+      Any missing fields, ambiguity, weak evidence, or conflict MUST be represented explicitly.
+
+  - name: comparison_not_judgment
+    description: >
+      A comparison result is an evidence object, not a final authorship, lineage, or allocation judgment.
+
+  - name: downstream_use_control
+    description: >
+      The object MUST declare which downstream uses are allowed or disallowed.
+
+namespaces:
+  meta:
+    description: Metadata about the comparison result itself.
+
+  inputs:
+    description: References to the compared Structure Fingerprint objects.
+
+  method:
+    description: Information about the comparison method, profile, and namespace weights.
+
+  proof_comparison:
+    description: Comparison of proof-oriented evidence such as signatures, hashes, provenance, and hard bindings.
+
+  inference_comparison:
+    description: Comparison of inference-oriented evidence such as structure, discourse flow, style, concepts, and semantic patterns.
+
+  result:
+    description: Aggregated comparison outcome.
+
+  uncertainty:
+    description: Explicit uncertainty, missing evidence, ambiguity, and confidence.
+
+  review:
+    description: Human review requirements and reasons.
+
+  policy:
+    description: Downstream usage limits and permitted processing layers.
+
+comparison_result_object:
+  required_namespaces:
+    - meta
+    - inputs
+    - method
+    - proof_comparison
+    - inference_comparison
+    - result
+    - uncertainty
+    - review
+    - policy
+
+  meta:
+    required_fields:
+      - comparison_id
+      - spec_version
+      - created_at
+      - producer
+
+    fields:
+      comparison_id:
+        type: string
+        description: Unique identifier for this comparison result.
+        example: cr_2026_001
+
+      spec_version:
+        type: string
+        const: 0.1.0
+
+      created_at:
+        type: string
+        format: date-time
+        description: Timestamp when the comparison result was created.
+
+      producer:
+        type: object
+        required:
+          - name
+          - type
+        fields:
+          name:
+            type: string
+            example: Trace-Wing-Agent
+          type:
+            type: string
+            enum:
+              - human
+              - ai_agent
+              - software_tool
+              - hybrid_system
+
+  inputs:
+    required_fields:
+      - left_fingerprint
+      - right_fingerprint
+      - input_binding_mode
+
+    fields:
+      left_fingerprint:
+        type: object
+        required:
+          - fingerprint_id
+          - uri
+          - spec_version
+        fields:
+          fingerprint_id:
+            type: string
+          uri:
+            type: string
+          spec_version:
+            type: string
+
+      right_fingerprint:
+        type: object
+        required:
+          - fingerprint_id
+          - uri
+          - spec_version
+        fields:
+          fingerprint_id:
+            type: string
+          uri:
+            type: string
+          spec_version:
+            type: string
+
+      input_binding_mode:
+        type: string
+        enum:
+          - uri_reference
+          - embedded_snapshot
+          - hash_bound_reference
+          - unresolved_reference
+        description: >
+          Describes how strongly the comparison result is bound to the input fingerprint objects.
+
+  method:
+    required_fields:
+      - method_id
+      - method_version
+      - compared_namespaces
+      - weighting_profile
+
+    fields:
+      method_id:
+        type: string
+        example: structure-fingerprint-comparator-basic
+
+      method_version:
+        type: string
+        example: 0.1.0
+
+      compared_namespaces:
+        type: array
+        items:
+          type: string
+          enum:
+            - meta
+            - canon
+            - proof
+            - inference
+            - risk
+
+      weighting_profile:
+        type: object
+        description: Relative weights used for comparison. Total SHOULD equal 1.0.
+        example:
+          proof: 0.35
+          inference: 0.50
+          risk: 0.15
+
+      normalization_profile:
+        type: string
+        description: Identifier of the normalization profile used before comparison.
+        example: default-text-normalization-v0.1
+
+  proof_comparison:
+    required_fields:
+      - status
+      - score
+      - matched_fields
+      - conflicting_fields
+
+    fields:
+      status:
+        type: string
+        enum:
+          - strong_match
+          - partial_match
+          - no_match
+          - conflict
+          - unavailable
+          - not_applicable
+
+      score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Proof-oriented similarity score.
+
+      matched_fields:
+        type: array
+        items:
+          type: string
+        example:
+          - proof.signature.subject
+          - proof.content_hash
+
+      conflicting_fields:
+        type: array
+        items:
+          type: string
+        example:
+          - proof.timestamp
+          - proof.provenance_chain
+
+      notes:
+        type: string
+
+  inference_comparison:
+    required_fields:
+      - status
+      - overall_score
+      - dimensions
+
+    fields:
+      status:
+        type: string
+        enum:
+          - strong_similarity
+          - moderate_similarity
+          - weak_similarity
+          - no_similarity
+          - conflict
+          - insufficient_evidence
+
+      overall_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Aggregated inference-oriented similarity score.
+
+      dimensions:
+        type: object
+        required:
+          - structural_flow
+          - concept_graph
+          - discourse_pattern
+          - stylistic_pattern
+        fields:
+          structural_flow:
+            type: number
+            minimum: 0
+            maximum: 1
+
+          concept_graph:
+            type: number
+            minimum: 0
+            maximum: 1
+
+          discourse_pattern:
+            type: number
+            minimum: 0
+            maximum: 1
+
+          stylistic_pattern:
+            type: number
+            minimum: 0
+            maximum: 1
+
+      matched_patterns:
+        type: array
+        items:
+          type: string
+        example:
+          - proof-inference-separation
+          - uncertainty-explicitness
+          - trace-to-allocation-layering
+
+      divergent_patterns:
+        type: array
+        items:
+          type: string
+        example:
+          - different-policy-outcome
+          - different-lineage-framing
+
+      notes:
+        type: string
+
+  result:
+    required_fields:
+      - overall_similarity
+      - comparison_class
+      - conflict_flags
+
+    fields:
+      overall_similarity:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Aggregated similarity score across proof, inference, and risk-aware comparison.
+
+      comparison_class:
+        type: string
+        enum:
+          - equivalent
+          - near_equivalent
+          - structurally_related
+          - weakly_related
+          - unrelated
+          - conflicting
+          - inconclusive
+
+      conflict_flags:
+        type: array
+        items:
+          type: string
+          enum:
+            - proof_conflict
+            - inference_conflict
+            - timestamp_conflict
+            - provenance_conflict
+            - normalization_conflict
+            - risk_conflict
+            - insufficient_data
+
+      summary:
+        type: string
+        description: Human-readable summary of the comparison result.
+
+  uncertainty:
+    required_fields:
+      - confidence
+      - missing_fields
+      - ambiguity_level
+
+    fields:
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Confidence in the comparison result.
+
+      missing_fields:
+        type: array
+        items:
+          type: string
+        description: Fields that were unavailable or incomplete.
+
+      ambiguity_level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - unresolved
+
+      uncertainty_notes:
+        type: string
+
+  review:
+    required_fields:
+      - human_review_required
+      - review_reason
+
+    fields:
+      human_review_required:
+        type: boolean
+
+      review_reason:
+        type: array
+        items:
+          type: string
+          enum:
+            - high_similarity
+            - proof_conflict
+            - inference_conflict
+            - allocation_sensitive
+            - authorship_sensitive
+            - legal_sensitive
+            - insufficient_evidence
+            - policy_required
+
+      recommended_review_type:
+        type: string
+        enum:
+          - none
+          - technical_review
+          - editorial_review
+          - provenance_review
+          - legal_review
+          - allocation_review
+          - multi_wing_review
+
+  policy:
+    required_fields:
+      - allowed_downstream_uses
+      - prohibited_downstream_uses
+
+    fields:
+      allowed_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - lineage_input
+            - dispute_input
+            - audit_input
+            - allocation_readiness_input
+            - ranking_input
+            - research_input
+            - human_review_input
+
+      prohibited_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - automatic_authorship_claim
+            - automatic_origin_claim
+            - automatic_royalty_assignment
+            - automatic_legal_claim
+            - irreversible_enforcement
+
+      policy_notes:
+        type: string
+
+validation_rules:
+  - id: cr-rule-001
+    level: must
+    description: >
+      proof_comparison and inference_comparison MUST be represented separately.
+
+  - id: cr-rule-002
+    level: must
+    description: >
+      comparison_class MUST NOT be used as an absolute authorship or origin judgment.
+
+  - id: cr-rule-003
+    level: must
+    description: >
+      uncertainty.confidence MUST be present and MUST be a number between 0 and 1.
+
+  - id: cr-rule-004
+    level: must
+    description: >
+      If comparison_class is equivalent, near_equivalent, conflicting, or inconclusive,
+      review.human_review_required SHOULD be true unless a clear policy exception is documented.
+
+  - id: cr-rule-005
+    level: must
+    description: >
+      policy.prohibited_downstream_uses MUST include automatic_authorship_claim,
+      automatic_origin_claim, automatic_royalty_assignment, and automatic_legal_claim
+      unless explicitly overridden by a higher-level governance profile.
+
+  - id: cr-rule-006
+    level: should
+    description: >
+      weighting_profile values SHOULD sum to 1.0.
+
+  - id: cr-rule-007
+    level: should
+    description: >
+      If input_binding_mode is unresolved_reference, uncertainty.ambiguity_level SHOULD NOT be low.
+
+minimum_valid_example:
+  meta:
+    comparison_id: cr_2026_001
+    spec_version: 0.1.0
+    created_at: "2026-05-14T00:00:00Z"
+    producer:
+      name: Trace-Wing-Agent
+      type: ai_agent
+
+  inputs:
+    left_fingerprint:
+      fingerprint_id: sf_left_001
+      uri: "https://example.org/fingerprints/sf_left_001.json"
+      spec_version: 0.1.0
+    right_fingerprint:
+      fingerprint_id: sf_right_001
+      uri: "https://example.org/fingerprints/sf_right_001.json"
+      spec_version: 0.1.0
+    input_binding_mode: hash_bound_reference
+
+  method:
+    method_id: structure-fingerprint-comparator-basic
+    method_version: 0.1.0
+    compared_namespaces:
+      - proof
+      - inference
+      - risk
+    weighting_profile:
+      proof: 0.35
+      inference: 0.50
+      risk: 0.15
+    normalization_profile: default-text-normalization-v0.1
+
+  proof_comparison:
+    status: partial_match
+    score: 0.62
+    matched_fields:
+      - proof.content_hash
+    conflicting_fields: []
+    notes: "Some proof fields matched, but provenance chain was incomplete."
+
+  inference_comparison:
+    status: strong_similarity
+    overall_score: 0.84
+    dimensions:
+      structural_flow: 0.88
+      concept_graph: 0.86
+      discourse_pattern: 0.81
+      stylistic_pattern: 0.79
+    matched_patterns:
+      - proof-inference-separation
+      - explicit-uncertainty
+      - trace-to-allocation-layering
+    divergent_patterns:
+      - different-policy-framing
+    notes: "Strong structural similarity was detected across concept and discourse layers."
+
+  result:
+    overall_similarity: 0.76
+    comparison_class: structurally_related
+    conflict_flags: []
+    summary: >
+      The two fingerprints show partial proof overlap and strong inference-level structural similarity.
+      This result may be used as input for lineage analysis but does not establish authorship or origin.
+
+  uncertainty:
+    confidence: 0.72
+    missing_fields:
+      - proof.provenance_chain
+      - risk.obfuscation_analysis
+    ambiguity_level: medium
+    uncertainty_notes: >
+      Similarity is meaningful, but missing provenance data prevents stronger conclusions.
+
+  review:
+    human_review_required: true
+    review_reason:
+      - high_similarity
+      - insufficient_evidence
+    recommended_review_type: multi_wing_review
+
+  policy:
+    allowed_downstream_uses:
+      - lineage_input
+      - dispute_input
+      - audit_input
+      - allocation_readiness_input
+      - human_review_input
+    prohibited_downstream_uses:
+      - automatic_authorship_claim
+      - automatic_origin_claim
+      - automatic_royalty_assignment
+      - automatic_legal_claim
+      - irreversible_enforcement
+    policy_notes: >
+      This comparison result may support downstream analysis, but it must not be used as a final
+      authorship, origin, legal, or royalty assignment decision.
