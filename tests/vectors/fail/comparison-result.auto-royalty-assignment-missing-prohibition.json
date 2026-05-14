@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "comparison_id": "cr_2026_missing_royalty_prohibition",
+    "spec_version": "0.1.0",
+    "created_at": "2026-05-14T00:00:00Z",
+    "producer": {
+      "name": "Trace-Wing-Agent",
+      "type": "ai_agent"
+    }
+  },
+  "inputs": {
+    "left_fingerprint": {
+      "fingerprint_id": "sf_origin_candidate_001",
+      "uri": "https://example.org/fingerprints/sf_origin_candidate_001.json",
+      "spec_version": "0.1.0"
+    },
+    "right_fingerprint": {
+      "fingerprint_id": "sf_later_candidate_001",
+      "uri": "https://example.org/fingerprints/sf_later_candidate_001.json",
+      "spec_version": "0.1.0"
+    },
+    "input_binding_mode": "hash_bound_reference"
+  },
+  "method": {
+    "method_id": "structure-fingerprint-comparator-basic",
+    "method_version": "0.1.0",
+    "compared_namespaces": [
+      "proof",
+      "inference",
+      "risk"
+    ],
+    "weighting_profile": {
+      "proof": 0.35,
+      "inference": 0.5,
+      "risk": 0.15
+    },
+    "normalization_profile": "default-text-normalization-v0.1"
+  },
+  "proof_comparison": {
+    "status": "partial_match",
+    "score": 0.62,
+    "matched_fields": [
+      "proof.content_hash"
+    ],
+    "conflicting_fields": [],
+    "notes": "Some proof-oriented fields matched, but the provenance chain was incomplete."
+  },
+  "inference_comparison": {
+    "status": "strong_similarity",
+    "overall_score": 0.84,
+    "dimensions": {
+      "structural_flow": 0.88,
+      "concept_graph": 0.86,
+      "discourse_pattern": 0.81,
+      "stylistic_pattern": 0.79
+    },
+    "matched_patterns": [
+      "proof-inference-separation",
+      "explicit-uncertainty",
+      "trace-to-allocation-layering"
+    ],
+    "divergent_patterns": [
+      "different-policy-framing"
+    ],
+    "notes": "Strong inference-level structural similarity was detected across concept, discourse, and structural-flow dimensions."
+  },
+  "result": {
+    "overall_similarity": 0.76,
+    "comparison_class": "structurally_related",
+    "conflict_flags": [],
+    "summary": "The two fingerprints show partial proof overlap and strong inference-level structural similarity."
+  },
+  "uncertainty": {
+    "confidence": 0.72,
+    "missing_fields": [
+      "proof.provenance_chain",
+      "risk.obfuscation_analysis"
+    ],
+    "ambiguity_level": "medium",
+    "uncertainty_notes": "Similarity is meaningful, but missing provenance data prevents stronger conclusions."
+  },
+  "review": {
+    "human_review_required": true,
+    "review_reason": [
+      "high_similarity",
+      "insufficient_evidence"
+    ],
+    "recommended_review_type": "multi_wing_review"
+  },
+  "policy": {
+    "allowed_downstream_uses": [
+      "lineage_input",
+      "dispute_input",
+      "audit_input",
+      "allocation_readiness_input",
+      "human_review_input"
+    ],
+    "prohibited_downstream_uses": [
+      "automatic_authorship_claim",
+      "automatic_origin_claim",
+      "automatic_legal_claim",
+      "irreversible_enforcement"
+    ],
+    "policy_notes": "This object intentionally omits automatic_royalty_assignment from prohibited_downstream_uses and should fail schema validation."
+  }
+}
