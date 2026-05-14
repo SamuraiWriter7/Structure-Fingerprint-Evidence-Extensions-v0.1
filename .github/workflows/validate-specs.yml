@@ -1,0 +1,152 @@
+name: Validate Specs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-specs:
+    name: Validate specifications and test vectors
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jsonschema
+
+      - name: Debug file tree
+        run: |
+          echo "=== Repository file tree ==="
+          find . -maxdepth 4 -type f | sort
+
+      - name: Validate Comparison Result v0.1
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          from jsonschema import Draft202012Validator, FormatChecker
+
+          print("=== Validating Comparison Result v0.1 ===")
+
+          schema_path = Path("schemas/comparison-result-v0.1.schema.json")
+          sample_path = Path("examples/comparison-result.sample.json")
+          pass_dir = Path("tests/vectors/pass")
+          fail_dir = Path("tests/vectors/fail")
+
+          required_paths = [
+              schema_path,
+              sample_path,
+              pass_dir / "comparison-result.valid.json",
+              fail_dir / "comparison-result.missing-confidence.json",
+              fail_dir / "comparison-result.auto-royalty-assignment-missing-prohibition.json",
+          ]
+
+          failed = False
+
+          for path in required_paths:
+              if not path.exists():
+                  print(f"ERROR: Required path not found: {path}")
+                  failed = True
+
+          if failed:
+              sys.exit(1)
+
+          def load_json(path: Path):
+              try:
+                  with path.open("r", encoding="utf-8") as f:
+                      return json.load(f)
+              except json.JSONDecodeError as e:
+                  print(f"ERROR: Invalid JSON in {path}: {e}")
+                  raise
+
+          schema = load_json(schema_path)
+
+          validator = Draft202012Validator(
+              schema,
+              format_checker=FormatChecker()
+          )
+
+          def validate_should_pass(path: Path):
+              instance = load_json(path)
+              errors = sorted(
+                  validator.iter_errors(instance),
+                  key=lambda e: list(e.path)
+              )
+
+              if errors:
+                  print(f"ERROR: Expected PASS but validation failed: {path}")
+                  for error in errors:
+                      location = ".".join(str(p) for p in error.path) or "<root>"
+                      print(f"  - {location}: {error.message}")
+                  return False
+
+              print(f"OK: {path} is valid.")
+              return True
+
+          def validate_should_fail(path: Path):
+              instance = load_json(path)
+              errors = sorted(
+                  validator.iter_errors(instance),
+                  key=lambda e: list(e.path)
+              )
+
+              if not errors:
+                  print(f"ERROR: Expected FAIL but validation passed: {path}")
+                  return False
+
+              print(f"OK: {path} failed as expected.")
+              for error in errors[:5]:
+                  location = ".".join(str(p) for p in error.path) or "<root>"
+                  print(f"  - {location}: {error.message}")
+              return True
+
+          all_ok = True
+
+          print("")
+          print("=== Validating sample ===")
+          all_ok = validate_should_pass(sample_path) and all_ok
+
+          print("")
+          print("=== Validating pass vectors ===")
+          pass_vectors = sorted(pass_dir.glob("comparison-result*.json"))
+
+          if not pass_vectors:
+              print(f"ERROR: No pass vectors found in {pass_dir}")
+              all_ok = False
+
+          for path in pass_vectors:
+              all_ok = validate_should_pass(path) and all_ok
+
+          print("")
+          print("=== Validating fail vectors ===")
+          fail_vectors = sorted(fail_dir.glob("comparison-result*.json"))
+
+          if not fail_vectors:
+              print(f"ERROR: No fail vectors found in {fail_dir}")
+              all_ok = False
+
+          for path in fail_vectors:
+              all_ok = validate_should_fail(path) and all_ok
+
+          print("")
+          if all_ok:
+              print("Validation succeeded.")
+              sys.exit(0)
+
+          print("Validation failed.")
+          sys.exit(1)
+          PY
