@@ -1,0 +1,632 @@
+id: lineage-relation-v0.1
+title: Lineage Relation v0.1
+version: 0.1.0
+status: draft
+license: CC-BY-4.0
+spec_type: lineage-relation-object
+
+summary: >
+  Lineage Relation v0.1 defines a minimal, machine-readable object for expressing
+  a directional or non-directional relationship between two or more Structure Fingerprint
+  records, using Comparison Result objects as evidence. It does not determine absolute
+  authorship, origin, infringement, or royalty allocation.
+
+purpose:
+  - Represent inferred lineage relationships between fingerprinted works or records.
+  - Use comparison-result objects as the primary evidence input.
+  - Separate relation claims from legal, authorship, and allocation judgments.
+  - Make directionality, confidence, uncertainty, and review requirements explicit.
+  - Provide a safe bridge from comparison results to dispute, audit, and allocation-readiness layers.
+
+non_goals:
+  - This specification does not determine absolute authorship.
+  - This specification does not determine absolute origin.
+  - This specification does not prove plagiarism or infringement.
+  - This specification does not assign royalties.
+  - This specification does not override human or institutional review.
+  - This specification does not require that similarity implies derivation.
+
+core_principles:
+  - name: comparison_before_lineage
+    description: >
+      A lineage relation SHOULD be based on one or more comparison-result objects.
+
+  - name: relation_not_verdict
+    description: >
+      A lineage relation is an evidence-backed relationship claim, not a final verdict.
+
+  - name: directionality_must_be_explicit
+    description: >
+      If a relation claims directional dependency, the direction and basis MUST be explicit.
+
+  - name: uncertainty_must_travel
+    description: >
+      Uncertainty from upstream comparison results MUST be preserved or increased, not hidden.
+
+  - name: allocation_outside_lineage
+    description: >
+      Royalty allocation and value distribution MUST remain outside this specification.
+
+namespaces:
+  meta:
+    description: Metadata about the lineage relation object.
+
+  subjects:
+    description: The fingerprint records or works being related.
+
+  evidence:
+    description: References to comparison-result objects and supporting evidence.
+
+  relation:
+    description: The claimed lineage relationship and its directionality.
+
+  reasoning:
+    description: Human-readable and machine-readable explanation of why the relation was assigned.
+
+  uncertainty:
+    description: Confidence, ambiguity, missing evidence, and inherited uncertainty.
+
+  review:
+    description: Human review requirements and recommended review type.
+
+  policy:
+    description: Allowed and prohibited downstream uses.
+
+lineage_relation_object:
+  required_namespaces:
+    - meta
+    - subjects
+    - evidence
+    - relation
+    - reasoning
+    - uncertainty
+    - review
+    - policy
+
+  meta:
+    required_fields:
+      - lineage_relation_id
+      - spec_version
+      - created_at
+      - producer
+
+    fields:
+      lineage_relation_id:
+        type: string
+        description: Unique identifier for this lineage relation object.
+        example: lr_2026_001
+
+      spec_version:
+        type: string
+        const: 0.1.0
+
+      created_at:
+        type: string
+        format: date-time
+        description: Timestamp when this lineage relation object was created.
+
+      producer:
+        type: object
+        required:
+          - name
+          - type
+        fields:
+          name:
+            type: string
+            example: Trace-Wing-Agent
+          type:
+            type: string
+            enum:
+              - human
+              - ai_agent
+              - software_tool
+              - hybrid_system
+              - review_panel
+
+  subjects:
+    required_fields:
+      - source
+      - target
+
+    fields:
+      source:
+        type: object
+        required:
+          - fingerprint_id
+          - uri
+          - role
+        fields:
+          fingerprint_id:
+            type: string
+          uri:
+            type: string
+          role:
+            type: string
+            enum:
+              - possible_origin
+              - earlier_candidate
+              - compared_subject
+              - common_source_candidate
+              - unknown
+
+      target:
+        type: object
+        required:
+          - fingerprint_id
+          - uri
+          - role
+        fields:
+          fingerprint_id:
+            type: string
+          uri:
+            type: string
+          role:
+            type: string
+            enum:
+              - possible_derivative
+              - later_candidate
+              - compared_subject
+              - influenced_subject
+              - unknown
+
+      additional_subjects:
+        type: array
+        description: Optional additional fingerprints involved in a multi-node lineage relation.
+        items:
+          type: object
+          required:
+            - fingerprint_id
+            - uri
+          fields:
+            fingerprint_id:
+              type: string
+            uri:
+              type: string
+            role:
+              type: string
+              enum:
+                - common_source_candidate
+                - intermediate_candidate
+                - parallel_candidate
+                - disputed_candidate
+                - unknown
+
+  evidence:
+    required_fields:
+      - comparison_result_refs
+      - evidence_basis
+
+    fields:
+      comparison_result_refs:
+        type: array
+        description: References to comparison-result objects used as primary evidence.
+        items:
+          type: object
+          required:
+            - comparison_id
+            - uri
+          fields:
+            comparison_id:
+              type: string
+            uri:
+              type: string
+            comparison_class:
+              type: string
+              enum:
+                - equivalent
+                - near_equivalent
+                - structurally_related
+                - weakly_related
+                - unrelated
+                - conflicting
+                - inconclusive
+            overall_similarity:
+              type: number
+              minimum: 0
+              maximum: 1
+
+      evidence_basis:
+        type: array
+        description: Types of evidence used to support the lineage relation.
+        items:
+          type: string
+          enum:
+            - proof_overlap
+            - structural_similarity
+            - concept_graph_similarity
+            - discourse_pattern_similarity
+            - stylistic_similarity
+            - timestamp_ordering
+            - provenance_chain
+            - citation_or_reference
+            - external_attestation
+            - human_review_note
+            - insufficient_evidence
+
+      supporting_notes:
+        type: array
+        items:
+          type: string
+
+  relation:
+    required_fields:
+      - relation_type
+      - directionality
+      - strength
+
+    fields:
+      relation_type:
+        type: string
+        enum:
+          - derived_from
+          - adapted_from
+          - influenced_by
+          - structurally_related
+          - near_duplicate
+          - shared_origin_possible
+          - common_ancestor_possible
+          - independent_convergence
+          - conflicting_lineage_claim
+          - insufficient_evidence
+          - unrelated
+
+      directionality:
+        type: string
+        enum:
+          - source_to_target
+          - target_to_source
+          - bidirectional
+          - non_directional
+          - unresolved
+
+      strength:
+        type: string
+        enum:
+          - strong
+          - moderate
+          - weak
+          - disputed
+          - inconclusive
+
+      relation_summary:
+        type: string
+        description: Human-readable summary of the lineage relation.
+
+      relation_tags:
+        type: array
+        items:
+          type: string
+        example:
+          - trace-protocol
+          - proof-inference-separation
+          - structure-lineage
+
+  reasoning:
+    required_fields:
+      - rationale
+      - positive_indicators
+      - limiting_factors
+
+    fields:
+      rationale:
+        type: string
+        description: Explanation of why this relation type was assigned.
+
+      positive_indicators:
+        type: array
+        description: Evidence patterns that support the relation.
+        items:
+          type: string
+        example:
+          - strong concept graph similarity
+          - matching proof-inference separation
+          - earlier timestamp on source fingerprint
+
+      limiting_factors:
+        type: array
+        description: Evidence gaps or concerns that limit the claim.
+        items:
+          type: string
+        example:
+          - incomplete provenance chain
+          - no direct citation
+          - possible independent convergence
+
+      alternative_relations:
+        type: array
+        description: Other plausible relation types.
+        items:
+          type: string
+          enum:
+            - derived_from
+            - adapted_from
+            - influenced_by
+            - structurally_related
+            - shared_origin_possible
+            - common_ancestor_possible
+            - independent_convergence
+            - conflicting_lineage_claim
+            - insufficient_evidence
+            - unrelated
+
+  uncertainty:
+    required_fields:
+      - confidence
+      - ambiguity_level
+      - inherited_uncertainty
+
+    fields:
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Confidence in the lineage relation claim.
+
+      ambiguity_level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - unresolved
+
+      inherited_uncertainty:
+        type: array
+        description: Uncertainty inherited from comparison-result objects.
+        items:
+          type: string
+        example:
+          - missing provenance chain
+          - medium confidence comparison result
+          - incomplete risk analysis
+
+      missing_evidence:
+        type: array
+        items:
+          type: string
+        example:
+          - direct citation
+          - signed provenance
+          - timestamp verification
+
+      uncertainty_notes:
+        type: string
+
+  review:
+    required_fields:
+      - human_review_required
+      - review_reason
+
+    fields:
+      human_review_required:
+        type: boolean
+
+      review_reason:
+        type: array
+        items:
+          type: string
+          enum:
+            - high_similarity
+            - directional_claim
+            - disputed_origin
+            - insufficient_evidence
+            - conflicting_comparison_results
+            - allocation_sensitive
+            - authorship_sensitive
+            - legal_sensitive
+            - policy_required
+
+      recommended_review_type:
+        type: string
+        enum:
+          - none
+          - technical_review
+          - editorial_review
+          - provenance_review
+          - lineage_review
+          - legal_review
+          - allocation_review
+          - multi_wing_review
+
+      reviewer_notes:
+        type: string
+
+  policy:
+    required_fields:
+      - allowed_downstream_uses
+      - prohibited_downstream_uses
+
+    fields:
+      allowed_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - dispute_input
+            - audit_input
+            - allocation_readiness_input
+            - human_review_input
+            - research_input
+            - lineage_graph_input
+            - provenance_review_input
+
+      prohibited_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - automatic_authorship_claim
+            - automatic_origin_claim
+            - automatic_plagiarism_claim
+            - automatic_royalty_assignment
+            - automatic_legal_claim
+            - irreversible_enforcement
+
+      policy_notes:
+        type: string
+
+validation_rules:
+  - id: lr-rule-001
+    level: must
+    description: >
+      A lineage relation MUST NOT be treated as an absolute authorship or origin judgment.
+
+  - id: lr-rule-002
+    level: must
+    description: >
+      relation.directionality MUST be explicit. If direction cannot be determined,
+      directionality MUST be set to unresolved or non_directional.
+
+  - id: lr-rule-003
+    level: must
+    description: >
+      If relation.relation_type is derived_from, adapted_from, or influenced_by,
+      directionality MUST NOT be non_directional.
+
+  - id: lr-rule-004
+    level: must
+    description: >
+      If evidence.comparison_result_refs is empty, relation.relation_type SHOULD be
+      insufficient_evidence unless another evidence basis is explicitly documented.
+
+  - id: lr-rule-005
+    level: must
+    description: >
+      uncertainty.confidence MUST be present and MUST be a number between 0 and 1.
+
+  - id: lr-rule-006
+    level: must
+    description: >
+      policy.prohibited_downstream_uses MUST include automatic_authorship_claim,
+      automatic_origin_claim, automatic_plagiarism_claim, automatic_royalty_assignment,
+      and automatic_legal_claim unless overridden by a higher-level governance profile.
+
+  - id: lr-rule-007
+    level: should
+    description: >
+      If relation.strength is strong and relation.directionality is source_to_target
+      or target_to_source, human_review_required SHOULD be true.
+
+  - id: lr-rule-008
+    level: should
+    description: >
+      If inherited uncertainty is high or unresolved, relation.strength SHOULD NOT be strong.
+
+  - id: lr-rule-009
+    level: should
+    description: >
+      If the relation type is independent_convergence, reasoning.limiting_factors SHOULD
+      explain why derivation was not inferred despite similarity.
+
+minimum_valid_example:
+  meta:
+    lineage_relation_id: lr_2026_001
+    spec_version: 0.1.0
+    created_at: "2026-05-14T00:00:00Z"
+    producer:
+      name: Trace-Wing-Agent
+      type: ai_agent
+
+  subjects:
+    source:
+      fingerprint_id: sf_origin_candidate_001
+      uri: "https://example.org/fingerprints/sf_origin_candidate_001.json"
+      role: possible_origin
+    target:
+      fingerprint_id: sf_later_candidate_001
+      uri: "https://example.org/fingerprints/sf_later_candidate_001.json"
+      role: possible_derivative
+    additional_subjects: []
+
+  evidence:
+    comparison_result_refs:
+      - comparison_id: cr_2026_001
+        uri: "https://example.org/comparisons/cr_2026_001.json"
+        comparison_class: structurally_related
+        overall_similarity: 0.76
+    evidence_basis:
+      - structural_similarity
+      - concept_graph_similarity
+      - discourse_pattern_similarity
+      - timestamp_ordering
+    supporting_notes:
+      - "The source fingerprint has an earlier timestamp."
+      - "The comparison result shows strong inference-level similarity."
+
+  relation:
+    relation_type: influenced_by
+    directionality: source_to_target
+    strength: moderate
+    relation_summary: >
+      The target appears to be structurally influenced by the source, based on
+      strong inference-level similarity and earlier timestamp evidence. This does
+      not establish authorship, origin, infringement, or royalty allocation.
+    relation_tags:
+      - structure-lineage
+      - trace-protocol
+      - proof-inference-separation
+
+  reasoning:
+    rationale: >
+      The comparison result indicates strong structural and concept-level similarity,
+      while timestamp ordering favors the source as an earlier candidate. However,
+      incomplete provenance prevents a stronger derived_from claim.
+    positive_indicators:
+      - strong concept graph similarity
+      - similar discourse pattern
+      - earlier timestamp on source fingerprint
+      - shared proof-inference separation structure
+    limiting_factors:
+      - incomplete provenance chain
+      - no direct citation
+      - possible independent convergence
+    alternative_relations:
+      - structurally_related
+      - independent_convergence
+      - insufficient_evidence
+
+  uncertainty:
+    confidence: 0.68
+    ambiguity_level: medium
+    inherited_uncertainty:
+      - missing provenance chain
+      - medium confidence comparison result
+      - incomplete risk analysis
+    missing_evidence:
+      - direct citation
+      - signed provenance
+      - external attestation
+    uncertainty_notes: >
+      The relation is plausible but not conclusive. Human review is recommended
+      before this object is used in any allocation-readiness or dispute process.
+
+  review:
+    human_review_required: true
+    review_reason:
+      - directional_claim
+      - insufficient_evidence
+      - allocation_sensitive
+    recommended_review_type: multi_wing_review
+    reviewer_notes: >
+      Review should examine provenance, timestamps, external references, and possible
+      independent convergence.
+
+  policy:
+    allowed_downstream_uses:
+      - dispute_input
+      - audit_input
+      - allocation_readiness_input
+      - human_review_input
+      - research_input
+      - lineage_graph_input
+    prohibited_downstream_uses:
+      - automatic_authorship_claim
+      - automatic_origin_claim
+      - automatic_plagiarism_claim
+      - automatic_royalty_assignment
+      - automatic_legal_claim
+      - irreversible_enforcement
+    policy_notes: >
+      This lineage relation may support downstream review and allocation-readiness
+      assessment, but it must not be used as a final authorship, origin, infringement,
+      legal, or royalty decision.
