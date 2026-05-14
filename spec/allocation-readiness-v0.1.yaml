@@ -1,0 +1,712 @@
+id: allocation-readiness-v0.1
+title: Allocation Readiness v0.1
+version: 0.1.0
+status: draft
+license: CC-BY-4.0
+spec_type: allocation-readiness-object
+
+summary: >
+  Allocation Readiness v0.1 defines a minimal, machine-readable object for assessing
+  whether a comparison result or lineage relation is sufficiently documented to be
+  passed into a downstream allocation review process. It does not assign royalties,
+  determine ownership, or make legal claims.
+
+purpose:
+  - Determine whether evidence is ready to be reviewed by an allocation layer.
+  - Provide a bridge from Structure Fingerprint, Comparison Result, and Lineage Relation objects to allocation workflows.
+  - Separate allocation-readiness from actual royalty assignment.
+  - Make evidence sufficiency, uncertainty, dispute status, and review requirements explicit.
+  - Prevent premature or automatic allocation based on weak or ambiguous evidence.
+
+non_goals:
+  - This specification does not assign royalty shares.
+  - This specification does not determine authorship.
+  - This specification does not determine origin.
+  - This specification does not prove infringement or plagiarism.
+  - This specification does not execute payment.
+  - This specification does not replace legal, editorial, institutional, or human review.
+
+core_principles:
+  - name: readiness_not_allocation
+    description: >
+      Allocation readiness indicates whether evidence may proceed to allocation review.
+      It is not itself an allocation decision.
+
+  - name: evidence_sufficiency_before_distribution
+    description: >
+      Evidence quality, lineage clarity, uncertainty, and dispute status SHOULD be checked
+      before any allocation process is considered.
+
+  - name: uncertainty_blocks_automation
+    description: >
+      High or unresolved uncertainty SHOULD prevent automatic allocation.
+
+  - name: human_review_for_sensitive_cases
+    description: >
+      Cases involving authorship, origin, dispute, legal sensitivity, or high-value allocation
+      SHOULD require human or multi-wing review.
+
+  - name: allocation_layer_separation
+    description: >
+      The actual allocation formula, royalty percentage, or payment decision MUST remain
+      outside this specification.
+
+namespaces:
+  meta:
+    description: Metadata about the allocation-readiness object.
+
+  inputs:
+    description: References to upstream evidence objects.
+
+  evidence:
+    description: Summary of evidence quality and sufficiency.
+
+  readiness:
+    description: Allocation-readiness classification and score.
+
+  gates:
+    description: Gate checks that must pass before allocation review.
+
+  uncertainty:
+    description: Confidence, ambiguity, inherited uncertainty, and unresolved issues.
+
+  review:
+    description: Human or multi-wing review requirements.
+
+  policy:
+    description: Allowed and prohibited downstream uses.
+
+allocation_readiness_object:
+  required_namespaces:
+    - meta
+    - inputs
+    - evidence
+    - readiness
+    - gates
+    - uncertainty
+    - review
+    - policy
+
+  meta:
+    required_fields:
+      - allocation_readiness_id
+      - spec_version
+      - created_at
+      - producer
+
+    fields:
+      allocation_readiness_id:
+        type: string
+        description: Unique identifier for this allocation-readiness object.
+        example: ar_2026_001
+
+      spec_version:
+        type: string
+        const: 0.1.0
+
+      created_at:
+        type: string
+        format: date-time
+        description: Timestamp when this allocation-readiness object was created.
+
+      producer:
+        type: object
+        required:
+          - name
+          - type
+        fields:
+          name:
+            type: string
+            example: Allocation-Readiness-Agent
+          type:
+            type: string
+            enum:
+              - human
+              - ai_agent
+              - software_tool
+              - hybrid_system
+              - review_panel
+
+  inputs:
+    required_fields:
+      - lineage_relation_refs
+      - comparison_result_refs
+
+    fields:
+      lineage_relation_refs:
+        type: array
+        description: References to lineage-relation objects used as allocation-readiness input.
+        items:
+          type: object
+          required:
+            - lineage_relation_id
+            - uri
+          fields:
+            lineage_relation_id:
+              type: string
+            uri:
+              type: string
+            relation_type:
+              type: string
+              enum:
+                - derived_from
+                - adapted_from
+                - influenced_by
+                - structurally_related
+                - near_duplicate
+                - shared_origin_possible
+                - common_ancestor_possible
+                - independent_convergence
+                - conflicting_lineage_claim
+                - insufficient_evidence
+                - unrelated
+            strength:
+              type: string
+              enum:
+                - strong
+                - moderate
+                - weak
+                - disputed
+                - inconclusive
+
+      comparison_result_refs:
+        type: array
+        description: References to comparison-result objects used as supporting input.
+        items:
+          type: object
+          required:
+            - comparison_id
+            - uri
+          fields:
+            comparison_id:
+              type: string
+            uri:
+              type: string
+            comparison_class:
+              type: string
+              enum:
+                - equivalent
+                - near_equivalent
+                - structurally_related
+                - weakly_related
+                - unrelated
+                - conflicting
+                - inconclusive
+            overall_similarity:
+              type: number
+              minimum: 0
+              maximum: 1
+
+      fingerprint_refs:
+        type: array
+        description: Optional references to underlying Structure Fingerprint records.
+        items:
+          type: object
+          required:
+            - fingerprint_id
+            - uri
+          fields:
+            fingerprint_id:
+              type: string
+            uri:
+              type: string
+            role:
+              type: string
+              enum:
+                - possible_origin
+                - possible_derivative
+                - contributor_candidate
+                - disputed_candidate
+                - unknown
+
+  evidence:
+    required_fields:
+      - evidence_status
+      - evidence_summary
+      - sufficiency_score
+
+    fields:
+      evidence_status:
+        type: string
+        enum:
+          - sufficient_for_review
+          - partially_sufficient
+          - insufficient
+          - conflicting
+          - disputed
+          - unavailable
+
+      sufficiency_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Evidence sufficiency score for allocation review readiness.
+
+      evidence_summary:
+        type: string
+        description: Human-readable summary of available evidence.
+
+      supporting_evidence:
+        type: array
+        items:
+          type: string
+          enum:
+            - proof_overlap
+            - structural_similarity
+            - lineage_relation
+            - timestamp_ordering
+            - provenance_chain
+            - signed_attestation
+            - citation_or_reference
+            - human_review_note
+            - dispute_resolution_record
+            - external_registry_record
+
+      missing_evidence:
+        type: array
+        items:
+          type: string
+        example:
+          - signed provenance
+          - direct citation
+          - resolved dispute status
+          - verified timestamp
+
+      conflicting_evidence:
+        type: array
+        items:
+          type: string
+        example:
+          - conflicting lineage relation
+          - inconsistent timestamp
+          - disputed provenance claim
+
+  readiness:
+    required_fields:
+      - readiness_class
+      - readiness_score
+      - allocation_review_allowed
+
+    fields:
+      readiness_class:
+        type: string
+        enum:
+          - ready_for_allocation_review
+          - conditionally_ready_for_allocation_review
+          - not_ready
+          - blocked_by_dispute
+          - blocked_by_uncertainty
+          - blocked_by_policy
+          - insufficient_evidence
+
+      readiness_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Overall readiness score for entering allocation review.
+
+      allocation_review_allowed:
+        type: boolean
+        description: Whether this evidence package may proceed to allocation review.
+
+      automatic_allocation_allowed:
+        type: boolean
+        description: >
+          Whether automatic allocation is allowed. For v0.1, this SHOULD normally be false
+          unless a higher-level governance profile explicitly permits it.
+
+      readiness_summary:
+        type: string
+        description: Human-readable explanation of readiness status.
+
+      recommended_next_step:
+        type: string
+        enum:
+          - proceed_to_allocation_review
+          - request_human_review
+          - request_multi_wing_review
+          - request_more_evidence
+          - send_to_dispute_registry
+          - block_allocation_process
+          - archive_for_audit_only
+
+  gates:
+    required_fields:
+      - provenance_gate
+      - lineage_gate
+      - uncertainty_gate
+      - dispute_gate
+      - policy_gate
+
+    fields:
+      provenance_gate:
+        type: object
+        required:
+          - status
+        fields:
+          status:
+            type: string
+            enum:
+              - pass
+              - warning
+              - fail
+              - not_applicable
+          notes:
+            type: string
+
+      lineage_gate:
+        type: object
+        required:
+          - status
+        fields:
+          status:
+            type: string
+            enum:
+              - pass
+              - warning
+              - fail
+              - not_applicable
+          notes:
+            type: string
+
+      uncertainty_gate:
+        type: object
+        required:
+          - status
+        fields:
+          status:
+            type: string
+            enum:
+              - pass
+              - warning
+              - fail
+              - not_applicable
+          notes:
+            type: string
+
+      dispute_gate:
+        type: object
+        required:
+          - status
+        fields:
+          status:
+            type: string
+            enum:
+              - pass
+              - warning
+              - fail
+              - not_applicable
+          dispute_status:
+            type: string
+            enum:
+              - no_known_dispute
+              - dispute_open
+              - dispute_resolved
+              - dispute_unknown
+          notes:
+            type: string
+
+      policy_gate:
+        type: object
+        required:
+          - status
+        fields:
+          status:
+            type: string
+            enum:
+              - pass
+              - warning
+              - fail
+              - not_applicable
+          notes:
+            type: string
+
+  uncertainty:
+    required_fields:
+      - confidence
+      - ambiguity_level
+      - inherited_uncertainty
+
+    fields:
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Confidence in the allocation-readiness assessment.
+
+      ambiguity_level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - unresolved
+
+      inherited_uncertainty:
+        type: array
+        description: Uncertainty inherited from comparison-result or lineage-relation objects.
+        items:
+          type: string
+        example:
+          - incomplete provenance chain
+          - medium confidence lineage relation
+          - missing direct citation
+
+      unresolved_issues:
+        type: array
+        items:
+          type: string
+        example:
+          - dispute status not checked
+          - possible independent convergence
+          - incomplete timestamp verification
+
+      uncertainty_notes:
+        type: string
+
+  review:
+    required_fields:
+      - human_review_required
+      - review_reason
+      - recommended_review_type
+
+    fields:
+      human_review_required:
+        type: boolean
+
+      review_reason:
+        type: array
+        items:
+          type: string
+          enum:
+            - allocation_sensitive
+            - authorship_sensitive
+            - origin_sensitive
+            - legal_sensitive
+            - dispute_possible
+            - high_similarity
+            - directional_lineage_claim
+            - insufficient_evidence
+            - conflicting_evidence
+            - policy_required
+
+      recommended_review_type:
+        type: string
+        enum:
+          - none
+          - technical_review
+          - editorial_review
+          - provenance_review
+          - lineage_review
+          - legal_review
+          - allocation_review
+          - multi_wing_review
+          - dispute_review
+
+      review_notes:
+        type: string
+
+  policy:
+    required_fields:
+      - allowed_downstream_uses
+      - prohibited_downstream_uses
+
+    fields:
+      allowed_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - allocation_review_input
+            - dispute_input
+            - audit_input
+            - human_review_input
+            - multi_wing_review_input
+            - governance_review_input
+            - research_input
+
+      prohibited_downstream_uses:
+        type: array
+        items:
+          type: string
+          enum:
+            - automatic_authorship_claim
+            - automatic_origin_claim
+            - automatic_plagiarism_claim
+            - automatic_royalty_assignment
+            - automatic_payment_execution
+            - automatic_legal_claim
+            - irreversible_enforcement
+
+      policy_notes:
+        type: string
+
+validation_rules:
+  - id: ar-rule-001
+    level: must
+    description: >
+      Allocation-readiness MUST NOT be treated as an allocation decision.
+
+  - id: ar-rule-002
+    level: must
+    description: >
+      This object MUST NOT contain royalty percentages, payment amounts, payout addresses,
+      or final allocation formulas.
+
+  - id: ar-rule-003
+    level: must
+    description: >
+      readiness.automatic_allocation_allowed SHOULD be false in v0.1 unless a higher-level
+      governance profile explicitly permits automatic allocation.
+
+  - id: ar-rule-004
+    level: must
+    description: >
+      If readiness.readiness_class is blocked_by_dispute, blocked_by_uncertainty,
+      blocked_by_policy, or insufficient_evidence, allocation_review_allowed MUST be false
+      unless a documented review exception exists.
+
+  - id: ar-rule-005
+    level: must
+    description: >
+      If gates.dispute_gate.status is fail, readiness.recommended_next_step SHOULD be
+      send_to_dispute_registry or block_allocation_process.
+
+  - id: ar-rule-006
+    level: must
+    description: >
+      If uncertainty.ambiguity_level is high or unresolved, human_review_required SHOULD be true.
+
+  - id: ar-rule-007
+    level: must
+    description: >
+      policy.prohibited_downstream_uses MUST include automatic_royalty_assignment,
+      automatic_payment_execution, automatic_authorship_claim, automatic_origin_claim,
+      and automatic_legal_claim unless overridden by a higher-level governance profile.
+
+  - id: ar-rule-008
+    level: should
+    description: >
+      readiness.readiness_score SHOULD be lower than or equal to the confidence score
+      of the strongest upstream lineage relation unless additional review evidence exists.
+
+  - id: ar-rule-009
+    level: should
+    description: >
+      If evidence.evidence_status is insufficient, readiness.readiness_class SHOULD be
+      insufficient_evidence or not_ready.
+
+minimum_valid_example:
+  meta:
+    allocation_readiness_id: ar_2026_001
+    spec_version: 0.1.0
+    created_at: "2026-05-14T00:00:00Z"
+    producer:
+      name: Allocation-Readiness-Agent
+      type: ai_agent
+
+  inputs:
+    lineage_relation_refs:
+      - lineage_relation_id: lr_2026_001
+        uri: "https://example.org/lineage/lr_2026_001.json"
+        relation_type: influenced_by
+        strength: moderate
+    comparison_result_refs:
+      - comparison_id: cr_2026_001
+        uri: "https://example.org/comparisons/cr_2026_001.json"
+        comparison_class: structurally_related
+        overall_similarity: 0.76
+    fingerprint_refs:
+      - fingerprint_id: sf_origin_candidate_001
+        uri: "https://example.org/fingerprints/sf_origin_candidate_001.json"
+        role: possible_origin
+      - fingerprint_id: sf_later_candidate_001
+        uri: "https://example.org/fingerprints/sf_later_candidate_001.json"
+        role: possible_derivative
+
+  evidence:
+    evidence_status: partially_sufficient
+    sufficiency_score: 0.66
+    evidence_summary: >
+      The evidence package contains a moderate lineage relation and a structurally related
+      comparison result. However, provenance and direct citation evidence remain incomplete.
+    supporting_evidence:
+      - structural_similarity
+      - lineage_relation
+      - timestamp_ordering
+    missing_evidence:
+      - signed provenance
+      - direct citation
+      - external attestation
+    conflicting_evidence: []
+
+  readiness:
+    readiness_class: conditionally_ready_for_allocation_review
+    readiness_score: 0.61
+    allocation_review_allowed: true
+    automatic_allocation_allowed: false
+    readiness_summary: >
+      The evidence is sufficient to enter human or multi-wing allocation review, but it is
+      not sufficient for automatic royalty assignment or payment execution.
+    recommended_next_step: request_multi_wing_review
+
+  gates:
+    provenance_gate:
+      status: warning
+      notes: "Provenance chain is incomplete."
+    lineage_gate:
+      status: pass
+      notes: "A moderate lineage relation exists."
+    uncertainty_gate:
+      status: warning
+      notes: "Ambiguity remains medium due to missing provenance."
+    dispute_gate:
+      status: pass
+      dispute_status: no_known_dispute
+      notes: "No active dispute is known."
+    policy_gate:
+      status: pass
+      notes: "Object may be used only as allocation review input."
+
+  uncertainty:
+    confidence: 0.64
+    ambiguity_level: medium
+    inherited_uncertainty:
+      - incomplete provenance chain
+      - medium confidence lineage relation
+      - missing direct citation
+    unresolved_issues:
+      - possible independent convergence
+      - incomplete timestamp verification
+    uncertainty_notes: >
+      The case may proceed to review, but uncertainty is too high for automatic allocation.
+
+  review:
+    human_review_required: true
+    review_reason:
+      - allocation_sensitive
+      - directional_lineage_claim
+      - insufficient_evidence
+    recommended_review_type: multi_wing_review
+    review_notes: >
+      Review should verify provenance, compare upstream lineage evidence, and determine whether
+      the relation is strong enough for any allocation process.
+
+  policy:
+    allowed_downstream_uses:
+      - allocation_review_input
+      - dispute_input
+      - audit_input
+      - human_review_input
+      - multi_wing_review_input
+    prohibited_downstream_uses:
+      - automatic_authorship_claim
+      - automatic_origin_claim
+      - automatic_plagiarism_claim
+      - automatic_royalty_assignment
+      - automatic_payment_execution
+      - automatic_legal_claim
+      - irreversible_enforcement
+    policy_notes: >
+      This object may be used to decide whether allocation review should begin.
+      It must not be used as a final allocation, authorship, legal, or payment decision.
